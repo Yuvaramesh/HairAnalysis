@@ -1,4 +1,3 @@
-# app.py
 import os
 import io
 import re
@@ -6,7 +5,7 @@ import json
 import numpy as np
 import cv2
 import google.generativeai as genai
-import markdown  # ✅ for rendering Gemini output as HTML
+import markdown  
 from datetime import datetime
 from flask import Flask, request, jsonify, render_template_string, send_file, session, redirect, url_for
 from werkzeug.utils import secure_filename
@@ -16,10 +15,8 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 
-# =======================
-# Gemini Config
-# =======================
-genai.configure(api_key="AIzaSyAn26uG2YjfKgD7b9B0td39KxcmdSQZZ48")  # replace with your key
+
+genai.configure(api_key="AIzaSyAn26uG2YjfKgD7b9B0td39KxcmdSQZZ48")  
 model = genai.GenerativeModel("gemini-2.5-flash")
 
 APP_TITLE = "AI Hair Analyzer (Demo)"
@@ -30,10 +27,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET", "supersecret123")  # needed for session
 app.config.update(UPLOAD_FOLDER=UPLOAD_DIR, MAX_CONTENT_LENGTH=8 * 1024 * 1024)
 
-
-# =======================
 # Utility Functions
-# =======================
 def _read_image(file_storage) -> np.ndarray:
     data = np.frombuffer(file_storage.read(), dtype=np.uint8)
     img = cv2.imdecode(data, cv2.IMREAD_COLOR)
@@ -154,9 +148,8 @@ def generate_pdf_report(ai_suggestions, scalp_image_path=None):
     return buffer
 
 
-# =======================
+
 # HTML Template
-# =======================
 INDEX_HTML = """
 <!doctype html>
 <html lang="en">
@@ -208,9 +201,7 @@ INDEX_HTML = """
 """
 
 
-# =======================
 # Routes
-# =======================
 @app.route("/", methods=["GET"])
 def index():
     return render_template_string(INDEX_HTML, APP_TITLE=APP_TITLE)
@@ -277,8 +268,6 @@ def download_report():
                      download_name="Hair_Report.pdf", mimetype="application/pdf")
 
 
-# =======================
-# Run
-# =======================
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

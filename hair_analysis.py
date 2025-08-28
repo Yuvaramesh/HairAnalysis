@@ -1,11 +1,5 @@
 import os
 import google.generativeai as genai
-
-# =======================
-# Configure Gemini
-# =======================
-# Make sure you set your API key in environment variable:
-#   export GEMINI_API_KEY="your_api_key_here"
 genai.configure(api_key="AIzaSyAn26uG2YjfKgD7b9B0td39KxcmdSQZZ48")
 
 # Initialize the model
@@ -32,7 +26,7 @@ def analyze_hair_results(analysis_results):
         }
     """
 
-    # Create a detailed prompt for Gemini
+    # Prompt for Gemini
     prompt = f"""
     You are a professional trichologist AI.
     Based on the following hair analysis results, provide a clear summary 
@@ -62,7 +56,6 @@ def analyze_hair_results(analysis_results):
         }
 
 
-# Example Usage (for testing)
 if __name__ == "__main__":
     sample_results = {
         "hair_type": "Dry",
