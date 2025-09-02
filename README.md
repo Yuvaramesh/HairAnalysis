@@ -1,6 +1,5 @@
 # Hair Analysis using AI
 
-
 <img width="1917" height="863" alt="image" src="https://github.com/user-attachments/assets/4eae94ec-0bc7-4d15-a126-d73166b254f0" />
 
 <img width="1873" height="878" alt="image" src="https://github.com/user-attachments/assets/852adbb7-f1da-4ba7-a80d-37deae260125" />
