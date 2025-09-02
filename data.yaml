@@ -1,5 +1,5 @@
-train: dataset/images/train
-val: dataset/images/val
+train: Augmented # or DataImg if annotated
+val: DataImg # small validation set
 
-nc: 3 # number of classes
-names: ["dandruff", "hair_loss", "healthy"]
+nc: 3 # number of classes (change based on your labels)
+names: ["dandruff", "baldness", "infection"]
