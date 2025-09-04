@@ -2,9 +2,11 @@ import os
 import io
 import re
 import json
+import base64
+import requests
+import mimetypes
 import numpy as np
 import cv2
-import google.generativeai as genai
 import markdown  
 from datetime import datetime
 from flask import Flask, request, jsonify, render_template_string, send_file, session, redirect, url_for
@@ -12,22 +14,22 @@ from werkzeug.utils import secure_filename
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, ListFlowable, ListItem
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 
 
-genai.configure(api_key="AIzaSyAn26uG2YjfKgD7b9B0td39KxcmdSQZZ48")  
-model = genai.GenerativeModel("gemini-2.5-flash")
+# 🔑 Hugging Face Token (set this in your environment instead of hardcoding)
+HF_API_TOKEN = os.environ.get("HF_TOKEN", "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")
 
 APP_TITLE = "AI Hair Analyzer (Demo)"
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("FLASK_SECRET", "supersecret123")  # needed for session
+app.secret_key = os.environ.get("FLASK_SECRET", "supersecret123")
 app.config.update(UPLOAD_FOLDER=UPLOAD_DIR, MAX_CONTENT_LENGTH=8 * 1024 * 1024)
 
-# Utility Functions
+
+# ---------------- Utility ----------------
 def _read_image(file_storage) -> np.ndarray:
     data = np.frombuffer(file_storage.read(), dtype=np.uint8)
     img = cv2.imdecode(data, cv2.IMREAD_COLOR)
@@ -35,87 +37,70 @@ def _read_image(file_storage) -> np.ndarray:
         raise ValueError("Could not decode image.")
     return img
 
-def analyze_hair_image(image_path):
-    """
-    Use Gemini Vision API to analyze scalp photo
-    and return hair_type, scalp_condition, and issues dynamically.
-    """
-    vision_model = genai.GenerativeModel("gemini-2.5-flash")
+def analyze_hair_results(analysis_results, image_path):
+    prompt = f"""
+    You are a professional trichologist AI.
+    Based on the following hair analysis results, provide a clear summary 
+    and actionable personalized suggestions:
 
-    prompt = """
-    You are a dermatologist AI.
-    Analyze this scalp/hair photo and return ONLY a JSON object with:
-    {
-      "hair_type": "Dry | Oily | Normal | Combination",
-      "scalp_condition": "Healthy | Oily | Dry | Flaky | Inflamed",
-      "issues": ["list of visible issues like dandruff, baldness, fungal infection, hair fall, etc."]
+    Hair Type: {analysis_results.get("hair_type", "Not specified")}
+    Scalp Condition: {analysis_results.get("scalp_condition", "Not specified")}
+    Issues: {", ".join(analysis_results.get("issues", [])) if analysis_results.get("issues") else "None"}
+    Age: {analysis_results.get("age")}
+    Sex: {analysis_results.get("sex")}
+    Family History: {analysis_results.get("family_history")}
+    Stress Level: {analysis_results.get("stress")}
+    Diet Quality: {analysis_results.get("diet_quality")}
+    Sleep Hours: {analysis_results.get("sleep_hours")}
+    Regimen Strength: {analysis_results.get("regimen_strength")}
+
+    Format response with:
+    ## Summary of Condition
+    ## AI Recommendations (lifestyle, diet, and product tips)
+    """
+
+    # Load image as bytes
+    with open(image_path, "rb") as f:
+        image_bytes = f.read()
+
+    url = "https://api-inference.huggingface.co/models/llava-hf/llava-1.5-7b-hf"
+    headers = {
+        "Authorization": f"Bearer {HF_API_TOKEN}",
     }
-    """
+    payload = {
+        "inputs": {
+            "text": prompt,
+            "image": image_bytes.decode("latin1")  # send image bytes
+        },
+        "parameters": {"max_new_tokens": 512, "temperature": 0.6}
+    }
 
     try:
-        with open(image_path, "rb") as img_file:
-            response = vision_model.generate_content(
-                [prompt, {"mime_type": "image/jpeg", "data": img_file.read()}]
-            )
+        r = requests.post(url, headers=headers, json=payload, timeout=90)
+        r.raise_for_status()
+        resp = r.json()
 
-        # Parse AI output (force JSON)
-        ai_text = response.text.strip()
-        ai_json = re.search(r"\{.*\}", ai_text, re.DOTALL)
-        if ai_json:
-            return json.loads(ai_json.group())
+        # Depending on HF output format
+        if isinstance(resp, list) and "generated_text" in resp[0]:
+            content = resp[0]["generated_text"]
+        elif "generated_text" in resp:
+            content = resp["generated_text"]
         else:
-            return {"hair_type": "Unknown", "scalp_condition": "Unknown", "issues": []}
-    except Exception as e:
-        return {"hair_type": "Error", "scalp_condition": "Error", "issues": [str(e)]}
-
-def analyze_hair_results(image_path, analysis_results):
-    """Combine scalp photo + user data and get personalized report from Gemini."""
-    try:
-        prompt = f"""
-You are a dermatologist AI.
-Analyze the uploaded scalp photo and the following user details.
-
-Hair Type (AI): {analysis_results.get("hair_type")}
-Scalp Condition (AI): {analysis_results.get("scalp_condition")}
-Detected Issues (AI): {", ".join(analysis_results.get("issues", []))}
-Age: {analysis_results.get("age")}
-Sex: {analysis_results.get("sex")}
-Family History: {analysis_results.get("family_history")}
-Stress Level (1–5): {analysis_results.get("stress")}
-Diet Quality (1–5): {analysis_results.get("diet_quality")}
-Sleep Hours: {analysis_results.get("sleep_hours")}
-Regimen Strength: {analysis_results.get("regimen_strength")}
-
-Your output MUST contain:
-1. **Confirmed Diagnosis** (single best guess).
-2. **Severity** (Mild / Moderate / Severe).
-3. **Treatment Plan**:
-   - Primary shampoo/medication (1–2 options max, with usage frequency).
-   - Lifestyle tips (stress, diet, sleep).
-   - When to see a dermatologist.
-
-Do not provide more than 5 product options.  
-Always mention usage frequency.  
-Respond in markdown format.
-"""
-
-        with open(image_path, "rb") as img_file:
-            response = model.generate_content(
-                [prompt, {"mime_type": "image/jpeg", "data": img_file.read()}]
-            )
+            content = json.dumps(resp)
 
         return {
             "analysis_summary": "AI-generated personalized hair report:",
-            "ai_suggestions": response.text.strip() if response.text else "No suggestions generated."
+            "ai_suggestions": content.strip()
         }
+
     except Exception as e:
         return {"analysis_summary": "Error", "ai_suggestions": str(e)}
 
+
 def generate_pdf_report(ai_suggestions, scalp_image_path=None):
-    """Generate PDF report with scalp image + AI suggestions (Markdown-aware + footer)"""
+    """Generate PDF report with scalp image + AI suggestions"""
     buffer = io.BytesIO()
 
-    # Footer function
     def add_footer(canvas_obj, doc):
         canvas_obj.saveState()
         footer_text = f"Generated by AI Hair Analyzer – {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
@@ -125,8 +110,6 @@ def generate_pdf_report(ai_suggestions, scalp_image_path=None):
 
     doc = SimpleDocTemplate(buffer, pagesize=A4)
     styles = getSampleStyleSheet()
-
-    # Custom styles
     title_style = styles["Title"]
     heading_style = ParagraphStyle("Heading", parent=styles["Heading2"], spaceAfter=8, textColor="#2E3A59")
     bullet_style = ParagraphStyle("Bullet", parent=styles["Normal"], leftIndent=20, bulletIndent=10, spaceAfter=4)
@@ -140,7 +123,7 @@ def generate_pdf_report(ai_suggestions, scalp_image_path=None):
         story.append(Image(scalp_image_path, width=300, height=200))
         story.append(Spacer(1, 12))
 
-    # Convert Gemini markdown output into PDF-friendly blocks
+    # Convert AI output into styled text
     lines = ai_suggestions.split("\n")
     bullets = []
     for line in lines:
@@ -152,46 +135,35 @@ def generate_pdf_report(ai_suggestions, scalp_image_path=None):
                 bullets = []
             continue
 
-        if line.startswith("##"):  # Heading
+        if line.startswith("##"):
             if bullets:
                 story.append(ListFlowable(bullets, bulletType="bullet", start="•", leftIndent=20))
                 bullets = []
             story.append(Paragraph(line.replace("##", "").strip(), heading_style))
             story.append(Spacer(1, 6))
 
-        elif line.startswith("* ") or line.startswith("- "):  # Bullet list
+        elif line.startswith("* ") or line.startswith("- "):
             bullets.append(ListItem(Paragraph(line[2:], bullet_style)))
 
-        elif re.match(r"^\d+\.", line):  # Numbered list
+        elif re.match(r"^\d+\.", line):
             story.append(Paragraph(line, normal_style))
 
-        elif line.startswith("**") and line.endswith("**"):  # Bold line
-            if bullets:
-                story.append(ListFlowable(bullets, bulletType="bullet", start="•", leftIndent=20))
-                bullets = []
-            story.append(Paragraph(f"<b>{line.strip('*')}</b>", normal_style))
-            story.append(Spacer(1, 6))
-
-        elif "**" in line:  # Bold phrase inside text
+        elif "**" in line:
             formatted = re.sub(r"\*\*(.*?)\*\*", r"<b>\1</b>", line)
             story.append(Paragraph(formatted, normal_style))
 
-        else:  # Normal text
+        else:
             story.append(Paragraph(line, normal_style))
 
-    # Flush any remaining bullets
     if bullets:
         story.append(ListFlowable(bullets, bulletType="bullet", start="•", leftIndent=20))
 
-    # Build doc with footer callback
     doc.build(story, onFirstPage=add_footer, onLaterPages=add_footer)
-
     buffer.seek(0)
     return buffer
 
 
-
-# HTML Template
+# ---------------- HTML Template ----------------
 INDEX_HTML = """
 <!doctype html>
 <html lang="en">
@@ -243,7 +215,7 @@ INDEX_HTML = """
 """
 
 
-# Routes
+# ---------------- Routes ----------------
 @app.route("/", methods=["GET"])
 def index():
     return render_template_string(INDEX_HTML, APP_TITLE=APP_TITLE)
@@ -260,7 +232,7 @@ def analyze_form():
         image_path = os.path.join(UPLOAD_DIR, filename)
         file.save(image_path)
 
-        # collect form data (dynamic)
+        # collect form data
         age = int(request.form.get("age", 28))
         sex = request.form.get("sex", "male")
         family_history = request.form.get("family_history", "no") == "yes"
@@ -269,28 +241,23 @@ def analyze_form():
         sleep_hours = float(request.form.get("sleep_hours", 7))
         regimen_strength = request.form.get("regimen_strength", "standard")
 
-        # 🔥 AI dynamically detects hair_type, scalp_condition, issues
-        ai_analysis = analyze_hair_image(image_path)
-
-        # Merge AI + user inputs
-        result = analyze_hair_results(
-            image_path,
-            {
-                **ai_analysis,  # AI-detected values
-                "age": age,
-                "sex": sex,
-                "family_history": family_history,
-                "stress": stress,
-                "diet_quality": diet_quality,
-                "sleep_hours": sleep_hours,
-                "regimen_strength": regimen_strength,
-            }
-        )
+        result = analyze_hair_results({
+            "hair_type": "Dry",
+            "scalp_condition": "Oily",
+            "issues": ["Hair Fall", "Dandruff"],
+            "age": age,
+            "sex": sex,
+            "family_history": family_history,
+            "stress": stress,
+            "diet_quality": diet_quality,
+            "sleep_hours": sleep_hours,
+            "regimen_strength": regimen_strength,
+        }, image_path)
 
         # Render markdown for UI
         result["ai_html"] = markdown.markdown(result["ai_suggestions"])
 
-        # Store JSON-safe in session
+        # Store in session
         session["last_result"] = json.dumps(result)
         session["last_image"] = image_path
 
@@ -298,6 +265,8 @@ def analyze_form():
 
     except Exception as e:
         return render_template_string(INDEX_HTML, result=None, error=str(e), APP_TITLE=APP_TITLE)
+
+
 @app.route("/download", methods=["GET"])
 def download_report():
     result_json = session.get("last_result")
@@ -309,15 +278,10 @@ def download_report():
     result = json.loads(result_json)
     pdf_buffer = generate_pdf_report(result["ai_suggestions"], image_path)
 
-    # 👇 Important: reset buffer position
-    pdf_buffer.seek(0)
+    return send_file(pdf_buffer, as_attachment=True,
+                     download_name="Hair_Report.pdf", mimetype="application/pdf")
 
-    return send_file(
-        pdf_buffer,
-        as_attachment=True,
-        download_name="Hair_Report.pdf",
-        mimetype="application/pdf"
-    )
 
+# ---------------- Run ----------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
