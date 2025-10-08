@@ -1,0 +1,450 @@
+[
+  {
+    "timestamp": "2025-10-08T07:41:32.470830Z",
+    "cv_metrics": {
+      "hair_density_score": 0.1059,
+      "hair_density_band": "high",
+      "scalp_exposed_ratio": 0.5096,
+      "redness_score": 0.0653,
+      "redness_band": "moderate"
+    },
+    "image_quality": {
+      "focus_score": 0.715,
+      "brightness_score": 0.458,
+      "contrast_score": 1.0,
+      "face_detected": 0,
+      "image_quality_score": 0.645
+    },
+    "advanced_metrics": {
+      "diameter": {
+        "mean_um": 14.441522598266602,
+        "median_um": 14.0,
+        "std_um": 3.1254096031188965,
+        "n_samples": 3818
+      },
+      "vellus_terminal": {
+        "vellus_count": 3818,
+        "terminal_count": 0,
+        "vellus_terminal_ratio": 1.0
+      },
+      "hair_count": 2,
+      "hairs_per_cm2": null
+    }
+  },
+  {
+    "timestamp": "2025-10-08T07:44:24.975840Z",
+    "cv_metrics": {
+      "hair_density_score": 0.1059,
+      "hair_density_band": "high",
+      "scalp_exposed_ratio": 0.5096,
+      "redness_score": 0.0653,
+      "redness_band": "moderate"
+    },
+    "image_quality": {
+      "focus_score": 0.715,
+      "brightness_score": 0.458,
+      "contrast_score": 1.0,
+      "face_detected": 0,
+      "image_quality_score": 0.645
+    },
+    "advanced_metrics": {
+      "diameter": {
+        "mean_um": 14.441522598266602,
+        "median_um": 14.0,
+        "std_um": 3.1254096031188965,
+        "n_samples": 3818
+      },
+      "vellus_terminal": {
+        "vellus_count": 3818,
+        "terminal_count": 0,
+        "vellus_terminal_ratio": 1.0
+      },
+      "hair_count": 2,
+      "hairs_per_cm2": null
+    }
+  },
+  {
+    "timestamp": "2025-10-08T07:46:34.081571Z",
+    "cv_metrics": {
+      "hair_density_score": 0.1881,
+      "hair_density_band": "high",
+      "scalp_exposed_ratio": 0.5282,
+      "redness_score": 0.0102,
+      "redness_band": "low"
+    },
+    "image_quality": {
+      "focus_score": 0.892,
+      "brightness_score": 0.376,
+      "contrast_score": 0.948,
+      "face_detected": 0,
+      "image_quality_score": 0.701
+    },
+    "advanced_metrics": {
+      "diameter": {
+        "mean_um": 24.238828659057617,
+        "median_um": 21.968997955322266,
+        "std_um": 6.287973403930664,
+        "n_samples": 2814
+      },
+      "vellus_terminal": {
+        "vellus_count": 2722,
+        "terminal_count": 92,
+        "vellus_terminal_ratio": 0.9673063255152807
+      },
+      "hair_count": 5,
+      "hairs_per_cm2": null
+    }
+  },
+  {
+    "timestamp": "2025-10-08T07:47:08.231957Z",
+    "cv_metrics": {
+      "hair_density_score": 0.1881,
+      "hair_density_band": "high",
+      "scalp_exposed_ratio": 0.5282,
+      "redness_score": 0.0102,
+      "redness_band": "low"
+    },
+    "image_quality": {
+      "focus_score": 0.892,
+      "brightness_score": 0.376,
+      "contrast_score": 0.948,
+      "face_detected": 0,
+      "image_quality_score": 0.701
+    },
+    "advanced_metrics": {
+      "diameter": {
+        "mean_um": 24.238828659057617,
+        "median_um": 21.968997955322266,
+        "std_um": 6.287973403930664,
+        "n_samples": 2814
+      },
+      "vellus_terminal": {
+        "vellus_count": 2722,
+        "terminal_count": 92,
+        "vellus_terminal_ratio": 0.9673063255152807
+      },
+      "hair_count": 5,
+      "hairs_per_cm2": null
+    }
+  },
+  {
+    "timestamp": "2025-10-08T07:47:27.159957Z",
+    "cv_metrics": {
+      "hair_density_score": 0.1881,
+      "hair_density_band": "high",
+      "scalp_exposed_ratio": 0.5282,
+      "redness_score": 0.0102,
+      "redness_band": "low"
+    },
+    "image_quality": {
+      "focus_score": 0.892,
+      "brightness_score": 0.376,
+      "contrast_score": 0.948,
+      "face_detected": 0,
+      "image_quality_score": 0.701
+    },
+    "advanced_metrics": {
+      "diameter": {
+        "mean_um": 24.238828659057617,
+        "median_um": 21.968997955322266,
+        "std_um": 6.287973403930664,
+        "n_samples": 2814
+      },
+      "vellus_terminal": {
+        "vellus_count": 2722,
+        "terminal_count": 92,
+        "vellus_terminal_ratio": 0.9673063255152807
+      },
+      "hair_count": 5,
+      "hairs_per_cm2": null
+    }
+  },
+  {
+    "timestamp": "2025-10-08T08:05:44.519506Z",
+    "cv_metrics": {
+      "hair_density_score": 0.1812,
+      "hair_density_band": "high",
+      "scalp_exposed_ratio": 0.0117,
+      "redness_score": 0.08,
+      "redness_band": "moderate"
+    },
+    "image_quality": {
+      "focus_score": 0.796,
+      "brightness_score": 0.256,
+      "contrast_score": 0.749,
+      "face_detected": 0,
+      "image_quality_score": 0.587
+    },
+    "advanced_metrics": {
+      "diameter": {
+        "mean_um": 22.27932357788086,
+        "median_um": 21.193798065185547,
+        "std_um": 4.901376247406006,
+        "n_samples": 4005
+      },
+      "vellus_terminal": {
+        "vellus_count": 4002,
+        "terminal_count": 3,
+        "vellus_terminal_ratio": 0.9992509363295881
+      },
+      "hair_count": 4,
+      "hairs_per_cm2": null
+    }
+  },
+  {
+    "timestamp": "2025-10-08T08:06:23.513638Z",
+    "cv_metrics": {
+      "hair_density_score": 0.1812,
+      "hair_density_band": "high",
+      "scalp_exposed_ratio": 0.0117,
+      "redness_score": 0.08,
+      "redness_band": "moderate"
+    },
+    "image_quality": {
+      "focus_score": 0.796,
+      "brightness_score": 0.256,
+      "contrast_score": 0.749,
+      "face_detected": 0,
+      "image_quality_score": 0.587
+    },
+    "advanced_metrics": {
+      "diameter": {
+        "mean_um": 22.27932357788086,
+        "median_um": 21.193798065185547,
+        "std_um": 4.901376247406006,
+        "n_samples": 4005
+      },
+      "vellus_terminal": {
+        "vellus_count": 4002,
+        "terminal_count": 3,
+        "vellus_terminal_ratio": 0.9992509363295881
+      },
+      "hair_count": 4,
+      "hairs_per_cm2": null
+    }
+  },
+  {
+    "timestamp": "2025-10-08T08:10:17.200914Z",
+    "cv_metrics": {
+      "hair_density_score": 0.1812,
+      "hair_density_band": "high",
+      "scalp_exposed_ratio": 0.0117,
+      "redness_score": 0.08,
+      "redness_band": "moderate"
+    },
+    "image_quality": {
+      "focus_score": 0.796,
+      "brightness_score": 0.256,
+      "contrast_score": 0.749,
+      "face_detected": 0,
+      "image_quality_score": 0.587
+    },
+    "advanced_metrics": {
+      "diameter": {
+        "mean_um": 22.27932357788086,
+        "median_um": 21.193798065185547,
+        "std_um": 4.901376247406006,
+        "n_samples": 4005
+      },
+      "vellus_terminal": {
+        "vellus_count": 4002,
+        "terminal_count": 3,
+        "vellus_terminal_ratio": 0.9992509363295881
+      },
+      "hair_count": 4,
+      "hairs_per_cm2": null
+    }
+  },
+  {
+    "timestamp": "2025-10-08T08:10:23.458945Z",
+    "cv_metrics": {
+      "hair_density_score": 0.1812,
+      "hair_density_band": "high",
+      "scalp_exposed_ratio": 0.0117,
+      "redness_score": 0.08,
+      "redness_band": "moderate"
+    },
+    "image_quality": {
+      "focus_score": 0.796,
+      "brightness_score": 0.256,
+      "contrast_score": 0.749,
+      "face_detected": 0,
+      "image_quality_score": 0.587
+    },
+    "advanced_metrics": {
+      "diameter": {
+        "mean_um": 22.27932357788086,
+        "median_um": 21.193798065185547,
+        "std_um": 4.901376247406006,
+        "n_samples": 4005
+      },
+      "vellus_terminal": {
+        "vellus_count": 4002,
+        "terminal_count": 3,
+        "vellus_terminal_ratio": 0.9992509363295881
+      },
+      "hair_count": 4,
+      "hairs_per_cm2": null
+    }
+  },
+  {
+    "timestamp": "2025-10-08T08:11:29.598956Z",
+    "cv_metrics": {
+      "hair_density_score": 0.1812,
+      "hair_density_band": "high",
+      "scalp_exposed_ratio": 0.0117,
+      "redness_score": 0.08,
+      "redness_band": "moderate"
+    },
+    "image_quality": {
+      "focus_score": 0.796,
+      "brightness_score": 0.256,
+      "contrast_score": 0.749,
+      "face_detected": 0,
+      "image_quality_score": 0.587
+    },
+    "advanced_metrics": {
+      "diameter": {
+        "mean_um": 22.27932357788086,
+        "median_um": 21.193798065185547,
+        "std_um": 4.901376247406006,
+        "n_samples": 4005
+      },
+      "vellus_terminal": {
+        "vellus_count": 4002,
+        "terminal_count": 3,
+        "vellus_terminal_ratio": 0.9992509363295881
+      },
+      "hair_count": 4,
+      "hairs_per_cm2": null
+    }
+  },
+  {
+    "timestamp": "2025-10-08T08:12:43.554690Z",
+    "cv_metrics": {
+      "hair_density_score": 0.1812,
+      "hair_density_band": "high",
+      "scalp_exposed_ratio": 0.0117,
+      "redness_score": 0.08,
+      "redness_band": "moderate"
+    },
+    "image_quality": {
+      "focus_score": 0.796,
+      "brightness_score": 0.256,
+      "contrast_score": 0.749,
+      "face_detected": 0,
+      "image_quality_score": 0.587
+    },
+    "advanced_metrics": {
+      "diameter": {
+        "mean_um": 22.27932357788086,
+        "median_um": 21.193798065185547,
+        "std_um": 4.901376247406006,
+        "n_samples": 4005
+      },
+      "vellus_terminal": {
+        "vellus_count": 4002,
+        "terminal_count": 3,
+        "vellus_terminal_ratio": 0.9992509363295881
+      },
+      "hair_count": 4,
+      "hairs_per_cm2": null
+    }
+  },
+  {
+    "timestamp": "2025-10-08T08:15:57.138896Z",
+    "cv_metrics": {
+      "hair_density_score": 0.1812,
+      "hair_density_band": "high",
+      "scalp_exposed_ratio": 0.0117,
+      "redness_score": 0.08,
+      "redness_band": "moderate"
+    },
+    "image_quality": {
+      "focus_score": 0.796,
+      "brightness_score": 0.256,
+      "contrast_score": 0.749,
+      "face_detected": 0,
+      "image_quality_score": 0.587
+    },
+    "advanced_metrics": {
+      "diameter": {
+        "mean_um": 22.27932357788086,
+        "median_um": 21.193798065185547,
+        "std_um": 4.901376247406006,
+        "n_samples": 4005
+      },
+      "vellus_terminal": {
+        "vellus_count": 4002,
+        "terminal_count": 3,
+        "vellus_terminal_ratio": 0.9992509363295881
+      },
+      "hair_count": 4,
+      "hairs_per_cm2": null
+    }
+  },
+  {
+    "timestamp": "2025-10-08T08:18:41.457876Z",
+    "cv_metrics": {
+      "hair_density_score": 0.0053,
+      "hair_density_band": "low",
+      "scalp_exposed_ratio": 0.0586,
+      "redness_score": 0.1817,
+      "redness_band": "high"
+    },
+    "image_quality": {
+      "focus_score": 0.129,
+      "brightness_score": 0.569,
+      "contrast_score": 0.883,
+      "face_detected": 0,
+      "image_quality_score": 0.368
+    },
+    "advanced_metrics": {
+      "diameter": {
+        "mean_um": 8.485132217407227,
+        "median_um": 8.0,
+        "std_um": 1.5508438348770142,
+        "n_samples": 1706
+      },
+      "vellus_terminal": {
+        "vellus_count": 1706,
+        "terminal_count": 0,
+        "vellus_terminal_ratio": 1.0
+      },
+      "hair_count": 5,
+      "hairs_per_cm2": null
+    }
+  },
+  {
+    "timestamp": "2025-10-08T08:36:12.229420Z",
+    "cv_metrics": {
+      "hair_density_score": 0.0122,
+      "hair_density_band": "low",
+      "scalp_exposed_ratio": 0.7466,
+      "redness_score": 0.0452,
+      "redness_band": "moderate"
+    },
+    "image_quality": {
+      "focus_score": 0.093,
+      "brightness_score": 0.781,
+      "contrast_score": 0.864,
+      "face_detected": 0,
+      "image_quality_score": 0.411
+    },
+    "advanced_metrics": {
+      "diameter": {
+        "mean_um": 4.5240702629089355,
+        "median_um": 4.393799781799316,
+        "std_um": 0.7117089629173279,
+        "n_samples": 1264
+      },
+      "vellus_terminal": {
+        "vellus_count": 1264,
+        "terminal_count": 0,
+        "vellus_terminal_ratio": 1.0
+      },
+      "hair_count": 1,
+      "hairs_per_cm2": null
+    }
+  }
+]
