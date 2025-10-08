@@ -1,3 +1,3 @@
 # Hair Analysis using AI
 
-#### Do check it out the **Live Link** : https://hairanalyser.streamlit.app/
+#### Do check it out : <A href="https://hairanalyser.streamlit.app/">**Live Link**</a> 
