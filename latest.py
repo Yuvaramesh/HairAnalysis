@@ -506,7 +506,7 @@ def load_profile_history(profile_key: str, limit: int = 50) -> List[Dict[str, An
 
 
 def analyze_hair_image_gemini(image_path):
-    """Analyze image with Gemini Vision - FIXED VERSION"""
+    """Analyze image with Gemini Vision - IMPROVED VERSION"""
     if vision_model is None:
         return {
             "hair_type": "API Not Configured",
@@ -518,64 +518,143 @@ def analyze_hair_image_gemini(image_path):
 
     prompt = """You are an expert dermatologist AI specializing in hair and scalp analysis.
 
-Analyze this scalp/hair photo carefully and return ONLY a valid JSON object (no markdown formatting) with exactly this structure:
+Analyze this scalp/hair photo carefully and provide a structured analysis.
 
+CRITICAL: Return ONLY a valid JSON object with NO markdown formatting, NO code blocks, NO extra text.
+
+Required JSON structure:
 {
-  "hair_type": "one of: Straight, Wavy, Curly, Coily, or Mixed",
-  "scalp_condition": "one of: Healthy, Oily, Dry, Flaky, Inflamed, or Combination",
-  "issues": ["list 2-5 specific visible issues from: hair loss, thinning hair, receding hairline, bald patches, dandruff, dry scalp, oily scalp, scalp redness, inflammation, breakage, split ends, weak hair follicles"]
+  "hair_type": "one of: Straight, Wavy, Curly, Coily, Mixed",
+  "scalp_condition": "one of: Healthy, Oily, Dry, Flaky, Inflamed, Combination",
+  "issues": ["list specific visible issues"]
 }
 
-Be specific and professional. If you see signs of hair loss or baldness, include those in the issues list."""
+Analyze for:
+- Hair texture and pattern (straight/wavy/curly/coily)
+- Scalp appearance (color, texture, dryness/oiliness)
+- Visible issues: hair loss, thinning, receding hairline, bald patches, dandruff, dryness, oiliness, redness, inflammation, breakage
+
+Be specific and professional. Return ONLY the JSON object."""
 
     try:
-        # Read image and send to Gemini
+        # Read image
         with open(image_path, "rb") as img_file:
             image_data = img_file.read()
 
-        # Use proper Gemini API format
-        response = vision_model.generate_content(
-            [prompt, {"mime_type": "image/jpeg", "data": image_data}],
-            generation_config=genai.types.GenerationConfig(
-                temperature=0.4,
-                max_output_tokens=500,
-            ),
+        # Create image part for Gemini
+        image_part = {"mime_type": "image/jpeg", "data": image_data}
+
+        # Configure generation with safety settings
+        generation_config = genai.types.GenerationConfig(
+            temperature=0.3,
+            top_p=0.8,
+            top_k=40,
+            max_output_tokens=800,
+            candidate_count=1,
         )
 
-        # Extract and parse response
-        ai_text = response.text.strip()
+        # Safety settings to avoid blocks
+        safety_settings = [
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+        ]
+
+        # Generate content
+        response = vision_model.generate_content(
+            [prompt, image_part],
+            generation_config=generation_config,
+            safety_settings=safety_settings,
+        )
+
+        # Check if response was blocked
+        if not response.candidates:
+            st.warning("⚠️ AI response was blocked. Trying alternative analysis...")
+            return {
+                "hair_type": "Unable to determine",
+                "scalp_condition": "Unable to determine",
+                "issues": [
+                    "AI analysis was blocked. Please try with a different image."
+                ],
+            }
+
+        # Get the text response
+        if hasattr(response, "text"):
+            ai_text = response.text.strip()
+        elif response.candidates and len(response.candidates) > 0:
+            candidate = response.candidates[0]
+            if hasattr(candidate, "content") and hasattr(candidate.content, "parts"):
+                ai_text = "".join(
+                    [
+                        part.text
+                        for part in candidate.content.parts
+                        if hasattr(part, "text")
+                    ]
+                )
+            else:
+                raise ValueError("Could not extract text from response")
+        else:
+            raise ValueError("No valid response received from AI")
+
+        # Clean the response
+        ai_text = ai_text.strip()
 
         # Remove markdown code blocks if present
-        ai_text = re.sub(r"^```json\s*", "", ai_text)
+        ai_text = re.sub(r"^```(?:json)?\s*", "", ai_text)
         ai_text = re.sub(r"\s*```$", "", ai_text)
         ai_text = ai_text.strip()
 
-        # Find JSON object
-        json_match = re.search(r"\{.*\}", ai_text, re.DOTALL)
+        # Try to find JSON object in the text
+        json_match = re.search(r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}", ai_text, re.DOTALL)
+
         if json_match:
-            result = json.loads(json_match.group())
-            # Validate structure
-            if all(k in result for k in ["hair_type", "scalp_condition", "issues"]):
+            json_str = json_match.group()
+            result = json.loads(json_str)
+
+            # Validate required fields
+            required_fields = ["hair_type", "scalp_condition", "issues"]
+            if all(k in result for k in required_fields):
+                # Ensure issues is a list
+                if not isinstance(result["issues"], list):
+                    result["issues"] = [str(result["issues"])]
                 return result
+            else:
+                raise ValueError(f"Missing required fields. Got: {list(result.keys())}")
+        else:
+            # If no JSON found, try to parse as plain JSON
+            result = json.loads(ai_text)
+            if all(k in result for k in ["hair_type", "scalp_condition", "issues"]):
+                if not isinstance(result["issues"], list):
+                    result["issues"] = [str(result["issues"])]
+                return result
+            else:
+                raise ValueError("Invalid JSON structure")
 
-        # If parsing failed, return structured response
+    except json.JSONDecodeError as je:
+        st.error(f"JSON parsing error: {str(je)}")
+        st.code(f"AI Response:\n{ai_text[:500]}")
         return {
-            "hair_type": "Analysis Incomplete",
-            "scalp_condition": "Analysis Incomplete",
-            "issues": ["AI response could not be parsed. Please try again."],
+            "hair_type": "Parse Error",
+            "scalp_condition": "Parse Error",
+            "issues": [f"Could not parse AI response: {str(je)[:200]}"],
         }
-
     except Exception as e:
-        st.error(f"AI Vision Analysis Error: {str(e)}")
+        error_msg = str(e)
+        st.error(f"AI Vision Analysis Error: {error_msg}")
+
+        # Return fallback analysis
         return {
-            "hair_type": "Error",
-            "scalp_condition": "Error",
-            "issues": [f"Analysis failed: {str(e)[:200]}"],
+            "hair_type": "Analysis Failed",
+            "scalp_condition": "Analysis Failed",
+            "issues": [
+                f"AI analysis encountered an error. Please try again with a clearer, well-lit image of your scalp."
+            ],
         }
 
 
 def analyze_hair_results_gemini(image_path, analysis_results, cv_metrics):
-    """Generate comprehensive analysis with Gemini - FIXED VERSION"""
+    """Generate comprehensive analysis with Gemini - IMPROVED VERSION"""
     if model is None:
         return {
             "analysis_summary": "API Configuration Error",
@@ -583,16 +662,27 @@ def analyze_hair_results_gemini(image_path, analysis_results, cv_metrics):
         }
 
     try:
+        # Extract values safely
+        hair_type = analysis_results.get("hair_type", "Not Available")
+        scalp_condition = analysis_results.get("scalp_condition", "Not Available")
+        issues_list = analysis_results.get("issues", ["None detected"])
+
+        # Format issues
+        if isinstance(issues_list, list):
+            issues_str = ", ".join(issues_list) if issues_list else "None detected"
+        else:
+            issues_str = str(issues_list)
+
         # Build comprehensive prompt
         prompt = f"""You are an expert dermatologist AI providing professional hair and scalp analysis.
 
 **PATIENT DATA:**
-- Hair Type (AI Detected): {analysis_results.get("hair_type", "Not Available")}
-- Scalp Condition (AI Detected): {analysis_results.get("scalp_condition", "Not Available")}
-- Visible Issues: {", ".join(analysis_results.get("issues", ["None detected"]))}
+- Hair Type (AI Detected): {hair_type}
+- Scalp Condition (AI Detected): {scalp_condition}
+- Visible Issues: {issues_str}
 - Age: {analysis_results.get("age", "Not Provided")}
 - Sex: {analysis_results.get("sex", "Not Provided")}
-- Family History of Hair Loss: {analysis_results.get("family_history", "Not Provided")}
+- Family History of Hair Loss: {"Yes" if analysis_results.get("family_history") else "No"}
 - Stress Level (1-10): {analysis_results.get("stress", "Not Provided")}/10
 - Diet Quality (1-10): {analysis_results.get("diet_quality", "Not Provided")}/10
 - Sleep Hours: {analysis_results.get("sleep_hours", "Not Provided")} hours/night
@@ -600,7 +690,7 @@ def analyze_hair_results_gemini(image_path, analysis_results, cv_metrics):
 
 **COMPUTER VISION METRICS:**
 - Hair Density Score: {cv_metrics.get("hair_density_score", "N/A")} ({cv_metrics.get("hair_density_band", "N/A")})
-- Scalp Exposed: {cv_metrics.get("scalp_exposed_ratio", "N/A")*100:.1f}%
+- Scalp Exposed: {cv_metrics.get("scalp_exposed_ratio", 0)*100:.1f}%
 - Redness Score: {cv_metrics.get("redness_score", "N/A")} ({cv_metrics.get("redness_band", "N/A")})
 
 **INSTRUCTIONS:**
@@ -609,108 +699,147 @@ Provide a comprehensive professional analysis in markdown format with these exac
 ## 📋 Summary
 - Overall scalp and hair health assessment
 - Primary concerns identified
-- If hair loss/baldness detected, classify severity using Norwood (males) or Ludwig (females) scale (Stage 0-7)
-- If no significant baldness: state "No significant hair loss detected (Stage 0)"
+- Severity classification (Mild/Moderate/Severe)
 
 ## 🔍 Detailed Analysis
-### AI Findings
+### Hair and Scalp Findings
 - Analysis of detected hair type and scalp condition
 - Interpretation of visible issues
+- Computer vision insights correlation
 
-### Computer Vision Insights  
-- What the density, exposure, and redness metrics indicate
-- Correlation with AI findings
-
-### Lifestyle Factors
-- How stress, diet, sleep affect current condition
+### Contributing Factors
+- Lifestyle factors impact (stress, diet, sleep)
 - Family history implications
+- Environmental and behavioral factors
 
 ## 💊 Treatment Recommendations
 ### Immediate Actions (Next 2 Weeks)
 - 3-4 specific actionable steps
 
-### Non-Surgical Treatments
-- Recommended shampoos/conditioners (with frequency)
-- Topical treatments (if applicable)
-- Supplements (if needed)
-- Maximum 5 specific product categories
+### Hair Care Products
+- Recommended shampoo types and frequency
+- Conditioner recommendations
+- Scalp treatments (if needed)
+- Leave-in products (if applicable)
+
+### Supplements & Nutrition
+- Recommended supplements (if needed)
+- Dietary improvements
+- Hydration guidelines
 
 ### Lifestyle Modifications
-- Diet improvements
-- Stress management
+- Stress management techniques
 - Sleep optimization
+- Exercise recommendations
 
-## 📅 Hair Care Regimen
-### Daily Routine
-- Morning and evening care steps
+## 📅 Daily Hair Care Regimen
+### Morning Routine
+- Specific morning care steps
+
+### Evening Routine
+- Evening care steps
 
 ### Weekly Treatments
-- Deep conditioning, scalp treatments
-
-### Monthly Maintenance
-- Progress tracking suggestions
+- Deep conditioning protocol
+- Scalp massage techniques
+- Exfoliation (if needed)
 
 ## ⚕️ Medical Guidance
-### Severity Assessment
-- Mild / Moderate / Severe classification
-
 ### When to Consult a Doctor
 - Clear indicators for professional consultation
-- Type of specialist recommended (dermatologist, trichologist, hair surgeon)
+- Type of specialist recommended
+- Urgency level
 
-### Surgical Options (if applicable)
-- If Stage 3-4: Mention as future option if non-surgical methods fail
-- If Stage 5-7: Recommend consultation for hair transplant
-- Brief explanation of hair transplant procedures
-- Realistic expectations and potential risks:
-  * Temporary shock loss
-  * Scarring (FUT vs FUE)
-  * Infection risk
-  * Unnatural appearance if poorly done
-  * Need for multiple sessions
-  * Ongoing maintenance required
+### Treatment Options Discussion
+- Non-surgical treatments overview
+- Prescription treatments (if applicable)
+- Surgical options (if severe hair loss detected)
 
-### Post-Treatment Prevention
-- How to maintain results
-- Preventive care regardless of treatment chosen
+## 🎯 Progress Tracking
+### What to Monitor
+- Specific metrics to track monthly
+- Photography guidelines for comparison
+- Symptom diary suggestions
 
-## 🎯 Success Tracking
-- What metrics to monitor monthly
-- Expected timeline for improvements
-- When to reassess and adjust treatment
+### Expected Timeline
+- Short-term improvements (2-4 weeks)
+- Medium-term results (2-3 months)
+- Long-term outcomes (6-12 months)
+
+### When to Reassess
+- Signs indicating need for treatment adjustment
+- Follow-up schedule recommendations
+
+## 🚫 What to Avoid
+- Products/ingredients to avoid
+- Harmful styling practices
+- Common mistakes
 
 **IMPORTANT:**
-- Be professional but empathetic
+- Be professional, empathetic, and encouraging
 - Provide specific, actionable advice
-- Don't recommend specific brand names
-- Emphasize both prevention and treatment
-- Always encourage professional consultation for severe cases
-- Be realistic about timelines and expectations"""
+- Avoid specific brand names (use generic categories)
+- Emphasize prevention and maintenance
+- Set realistic expectations
+- Always encourage professional consultation for severe cases"""
 
         # Read image
         with open(image_path, "rb") as img_file:
             image_data = img_file.read()
 
-        # Generate comprehensive analysis
-        response = model.generate_content(
-            [prompt, {"mime_type": "image/jpeg", "data": image_data}],
-            generation_config=genai.types.GenerationConfig(
-                temperature=0.7,
-                max_output_tokens=4000,
-            ),
+        image_part = {"mime_type": "image/jpeg", "data": image_data}
+
+        # Generation config
+        generation_config = genai.types.GenerationConfig(
+            temperature=0.7,
+            top_p=0.9,
+            top_k=40,
+            max_output_tokens=4000,
+            candidate_count=1,
         )
 
-        ai_text = getattr(response, "text", None)
+        # Safety settings
+        safety_settings = [
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+        ]
 
-        if ai_text and ai_text.strip():
+        # Generate comprehensive analysis
+        response = model.generate_content(
+            [prompt, image_part],
+            generation_config=generation_config,
+            safety_settings=safety_settings,
+        )
+
+        # Extract text from response
+        if hasattr(response, "text") and response.text:
+            ai_text = response.text.strip()
+        elif response.candidates and len(response.candidates) > 0:
+            candidate = response.candidates[0]
+            if hasattr(candidate, "content") and hasattr(candidate.content, "parts"):
+                ai_text = "".join(
+                    [
+                        part.text
+                        for part in candidate.content.parts
+                        if hasattr(part, "text")
+                    ]
+                )
+            else:
+                ai_text = None
+        else:
+            ai_text = None
+
+        if ai_text and len(ai_text) > 100:
             return {
                 "analysis_summary": "AI-Powered Professional Hair & Scalp Analysis",
-                "ai_suggestions": ai_text.strip(),
+                "ai_suggestions": ai_text,
             }
         else:
             return {
                 "analysis_summary": "Analysis Incomplete",
-                "ai_suggestions": "⚠️ AI did not generate a response. Please try again with a clearer image.",
+                "ai_suggestions": "⚠️ AI did not generate a complete response. Please try again with a clearer, well-lit image showing your scalp clearly.",
             }
 
     except Exception as e:
@@ -718,7 +847,20 @@ Provide a comprehensive professional analysis in markdown format with these exac
         st.error(f"AI Analysis Error: {error_msg[:300]}")
         return {
             "analysis_summary": "Analysis Error",
-            "ai_suggestions": f"⚠️ AI analysis encountered an error: {error_msg[:500]}\n\nPlease check your API key and try again.",
+            "ai_suggestions": f"""⚠️ **AI analysis encountered an error**
+
+The system was unable to complete the comprehensive analysis. This could be due to:
+- API connectivity issues
+- Image quality concerns
+- Rate limiting
+
+**Recommended Actions:**
+1. Ensure your image is clear and well-lit
+2. Check your internet connection
+3. Wait a moment and try again
+4. If the issue persists, try uploading a different image
+
+**Error Details:** {error_msg[:500]}""",
         }
 
 

@@ -446,5 +446,101 @@
       "hair_count": 1,
       "hairs_per_cm2": null
     }
+  },
+  {
+    "timestamp": "2025-10-09T05:25:31.974875Z",
+    "cv_metrics": {
+      "hair_density_score": 0.1881,
+      "hair_density_band": "high",
+      "scalp_exposed_ratio": 0.5282,
+      "redness_score": 0.0102,
+      "redness_band": "low"
+    },
+    "image_quality": {
+      "focus_score": 0.892,
+      "brightness_score": 0.376,
+      "contrast_score": 0.948,
+      "face_detected": 0,
+      "image_quality_score": 0.701
+    },
+    "advanced_metrics": {
+      "diameter": {
+        "mean_um": 24.238828659057617,
+        "median_um": 21.968997955322266,
+        "std_um": 6.287973403930664,
+        "n_samples": 2814
+      },
+      "vellus_terminal": {
+        "vellus_count": 2722,
+        "terminal_count": 92,
+        "vellus_terminal_ratio": 0.9673063255152807
+      },
+      "hair_count": 5,
+      "hairs_per_cm2": null
+    }
+  },
+  {
+    "timestamp": "2025-10-09T05:52:39.476198Z",
+    "cv_metrics": {
+      "hair_density_score": 0.1881,
+      "hair_density_band": "high",
+      "scalp_exposed_ratio": 0.5282,
+      "redness_score": 0.0102,
+      "redness_band": "low"
+    },
+    "image_quality": {
+      "focus_score": 0.892,
+      "brightness_score": 0.376,
+      "contrast_score": 0.948,
+      "face_detected": 0,
+      "image_quality_score": 0.701
+    },
+    "advanced_metrics": {
+      "diameter": {
+        "mean_um": 24.238828659057617,
+        "median_um": 21.968997955322266,
+        "std_um": 6.287973403930664,
+        "n_samples": 2814
+      },
+      "vellus_terminal": {
+        "vellus_count": 2722,
+        "terminal_count": 92,
+        "vellus_terminal_ratio": 0.9673063255152807
+      },
+      "hair_count": 5,
+      "hairs_per_cm2": null
+    }
+  },
+  {
+    "timestamp": "2025-10-09T05:55:48.494111Z",
+    "cv_metrics": {
+      "hair_density_score": 0.1881,
+      "hair_density_band": "high",
+      "scalp_exposed_ratio": 0.5282,
+      "redness_score": 0.0102,
+      "redness_band": "low"
+    },
+    "image_quality": {
+      "focus_score": 0.892,
+      "brightness_score": 0.376,
+      "contrast_score": 0.948,
+      "face_detected": 0,
+      "image_quality_score": 0.701
+    },
+    "advanced_metrics": {
+      "diameter": {
+        "mean_um": 24.238828659057617,
+        "median_um": 21.968997955322266,
+        "std_um": 6.287973403930664,
+        "n_samples": 2814
+      },
+      "vellus_terminal": {
+        "vellus_count": 2722,
+        "terminal_count": 92,
+        "vellus_terminal_ratio": 0.9673063255152807
+      },
+      "hair_count": 5,
+      "hairs_per_cm2": null
+    }
   }
 ]
