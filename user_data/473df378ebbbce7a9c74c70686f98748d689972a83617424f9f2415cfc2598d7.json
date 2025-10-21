@@ -542,5 +542,175 @@
       "hair_count": 5,
       "hairs_per_cm2": null
     }
+  },
+  {
+    "timestamp": "2025-10-16T13:36:33.755098Z",
+    "cv_metrics": {
+      "hair_density_score": 0.1812,
+      "hair_density_band": "high",
+      "scalp_exposed_ratio": 0.0117,
+      "redness_score": 0.08,
+      "redness_band": "moderate"
+    },
+    "image_quality": {
+      "focus_score": 0.796,
+      "brightness_score": 0.256,
+      "contrast_score": 0.749,
+      "face_detected": 0,
+      "image_quality_score": 0.587
+    },
+    "advanced_metrics": {
+      "diameter": {
+        "mean_um": 111.39661407470703,
+        "median_um": 105.96898651123047,
+        "std_um": 24.506879806518555,
+        "n_samples": 4005
+      },
+      "vellus_terminal": {
+        "vellus_count": 0,
+        "terminal_count": 4005,
+        "vellus_terminal_ratio": 0.0
+      },
+      "hair_count": 4,
+      "hairs_per_cm2": 317.0577045022194,
+      "auto_pixel_size_mm": 0.005,
+      "auto_vellus_threshold_um": 40.0
+    }
+  },
+  {
+    "timestamp": "2025-10-16T13:40:51.278952Z",
+    "cv_metrics": {
+      "hair_density_score": 0.1059,
+      "hair_density_band": "high",
+      "scalp_exposed_ratio": 0.5096,
+      "redness_score": 0.0653,
+      "redness_band": "moderate"
+    },
+    "image_quality": {
+      "focus_score": 0.715,
+      "brightness_score": 0.458,
+      "contrast_score": 1.0,
+      "face_detected": 0,
+      "image_quality_score": 0.645
+    },
+    "advanced_metrics": {
+      "diameter": {
+        "mean_um": 72.2076187133789,
+        "median_um": 70.0,
+        "std_um": 15.627046585083008,
+        "n_samples": 3818
+      },
+      "vellus_terminal": {
+        "vellus_count": 0,
+        "terminal_count": 3818,
+        "vellus_terminal_ratio": 0.0
+      },
+      "hair_count": 2,
+      "hairs_per_cm2": 159.21665406201492,
+      "auto_pixel_size_mm": 0.005,
+      "auto_vellus_threshold_um": 40.0
+    }
+  },
+  {
+    "timestamp": "2025-10-16T13:46:10.944593Z",
+    "cv_metrics": {
+      "hair_density_score": 0.1059,
+      "hair_density_band": "high",
+      "scalp_exposed_ratio": 0.5096,
+      "redness_score": 0.0653,
+      "redness_band": "moderate"
+    },
+    "image_quality": {
+      "focus_score": 0.715,
+      "brightness_score": 0.458,
+      "contrast_score": 1.0,
+      "face_detected": 0,
+      "image_quality_score": 0.645
+    },
+    "advanced_metrics": {
+      "diameter": {
+        "mean_um": 17.984499335289,
+        "median_um": 17.984499335289,
+        "std_um": 3.9844995737075797,
+        "n_samples": 2
+      },
+      "vellus_terminal": {
+        "vellus_count": 2,
+        "terminal_count": 0,
+        "vellus_terminal_ratio": 1.0
+      },
+      "hair_count": 2,
+      "hairs_per_cm2": 159.21665406201492,
+      "auto_pixel_size_mm": 0.005,
+      "auto_vellus_threshold_um": 40.0
+    }
+  },
+  {
+    "timestamp": "2025-10-16T13:47:25.640296Z",
+    "cv_metrics": {
+      "hair_density_score": 0.1812,
+      "hair_density_band": "high",
+      "scalp_exposed_ratio": 0.0117,
+      "redness_score": 0.08,
+      "redness_band": "moderate"
+    },
+    "image_quality": {
+      "focus_score": 0.796,
+      "brightness_score": 0.256,
+      "contrast_score": 0.749,
+      "face_detected": 0,
+      "image_quality_score": 0.587
+    },
+    "advanced_metrics": {
+      "diameter": {
+        "mean_um": 23.98449957370758,
+        "median_um": 22.984499335289005,
+        "std_um": 10.084157746288072,
+        "n_samples": 4
+      },
+      "vellus_terminal": {
+        "vellus_count": 4,
+        "terminal_count": 0,
+        "vellus_terminal_ratio": 1.0
+      },
+      "hair_count": 4,
+      "hairs_per_cm2": 317.0577045022194,
+      "auto_pixel_size_mm": 0.005,
+      "auto_vellus_threshold_um": 40.0
+    }
+  },
+  {
+    "timestamp": "2025-10-21T05:25:34.490518Z",
+    "cv_metrics": {
+      "hair_density_score": 0.1059,
+      "hair_density_band": "high",
+      "scalp_exposed_ratio": 0.5096,
+      "redness_score": 0.0653,
+      "redness_band": "moderate"
+    },
+    "image_quality": {
+      "focus_score": 0.715,
+      "brightness_score": 0.458,
+      "contrast_score": 1.0,
+      "face_detected": 0,
+      "image_quality_score": 0.645
+    },
+    "advanced_metrics": {
+      "diameter": {
+        "mean_um": 17.984499335289,
+        "median_um": 17.984499335289,
+        "std_um": 3.9844995737075797,
+        "n_samples": 2
+      },
+      "vellus_terminal": {
+        "vellus_count": 2,
+        "terminal_count": 0,
+        "vellus_terminal_ratio": 1.0
+      },
+      "hair_count": 2,
+      "hairs_per_cm2": 159.21665406201492,
+      "auto_pixel_size_mm": 0.005,
+      "auto_vellus_threshold_um": 40.0
+    }
   }
 ]

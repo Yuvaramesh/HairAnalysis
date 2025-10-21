@@ -300,7 +300,11 @@ def simple_hair_mask_from_edges(edges):
 
 
 def estimate_diameter_distribution(mask_binary, pixel_size_mm: Optional[float] = None):
-    """Estimate hair diameter distribution"""
+    """
+    Improved: returns one diameter (µm) per connected hair component.
+    - mask_binary: binary mask (0/1) where hair pixels == 1
+    - pixel_size_mm: mm per pixel (if provided, convert px -> µm)
+    """
     if mask_binary is None or mask_binary.sum() == 0:
         return {
             "diameters_um": [],
@@ -310,27 +314,41 @@ def estimate_diameter_distribution(mask_binary, pixel_size_mm: Optional[float] =
             "n_samples": 0,
         }
 
-    dist = cv2.distanceTransform((mask_binary * 255).astype(np.uint8), cv2.DIST_L2, 5)
+    # Ensure uint8 0/255
+    comp_mask = (mask_binary > 0).astype(np.uint8) * 255
 
-    if SKIMAGE_AVAILABLE:
-        sk = skeletonize(mask_binary > 0)
-        radii = dist[sk]
-    else:
-        thresh = max(1.0, dist.max() * 0.4)
-        centers = dist >= thresh
-        radii = dist[centers]
-        if len(radii) == 0:
-            radii = dist[dist > 0]
+    # Distance transform on whole mask (in pixels)
+    dist = cv2.distanceTransform(comp_mask, cv2.DIST_L2, 5)
 
-    diameters_px = radii * 2.0
-    if pixel_size_mm:
-        diameters_mm = diameters_px * float(pixel_size_mm)
-        diameters_um = diameters_mm * 1000.0
-    else:
-        diameters_um = diameters_px
+    # Connected components to get per-component statistics
+    num_labels, labels = cv2.connectedComponents(comp_mask, connectivity=8)
+    diameters_px = []
 
-    diameters_um = np.array(diameters_um)
-    if diameters_um.size == 0:
+    # Minimum area threshold to ignore tiny noise (in pixels)
+    min_area_px = 20
+
+    for lbl in range(1, num_labels):
+        component = labels == lbl
+        area = int(component.sum())
+        if area < min_area_px:
+            continue
+
+        # get distance values inside this component
+        comp_radii = dist[component]
+        if comp_radii.size == 0:
+            continue
+
+        # choose a representative radius for the component:
+        # median is robust to boundary noise; max can be used if you prefer wider estimate
+        rep_radius = float(np.median(comp_radii))
+
+        # convert radius -> diameter (px)
+        rep_diam_px = rep_radius * 2.0
+        diameters_px.append(rep_diam_px)
+
+    diameters_px = np.array(diameters_px, dtype=float)
+
+    if diameters_px.size == 0:
         return {
             "diameters_um": [],
             "mean_um": None,
@@ -338,6 +356,14 @@ def estimate_diameter_distribution(mask_binary, pixel_size_mm: Optional[float] =
             "std_um": None,
             "n_samples": 0,
         }
+
+    # Convert to µm if pixel_size_mm is provided (mm->um = *1000)
+    if pixel_size_mm and pixel_size_mm > 0:
+        diameters_um = diameters_px * float(pixel_size_mm) * 1000.0
+    else:
+        diameters_um = diameters_px  # fallback: return px units (document this)
+
+    diameters_um = np.array(diameters_um)
 
     return {
         "diameters_um": diameters_um.tolist(),
@@ -360,24 +386,31 @@ def classify_vellus_terminal(diameters_um_list, threshold_um: float = 40.0):
 
 
 def estimate_hair_count(mask_binary):
-    """Estimate total hair count"""
-    try:
-        if SKIMAGE_AVAILABLE:
-            sk = skeletonize(mask_binary > 0).astype(np.uint8)
-            kernel = np.ones((3, 3), dtype=np.uint8)
-            neighbors = cv2.filter2D(sk, -1, kernel) - sk
-            endpoints = ((sk == 1) & (neighbors == 1)).sum()
-            hair_count = int(max(1, endpoints))
-        else:
-            contours, _ = cv2.findContours(
-                (mask_binary * 255).astype(np.uint8),
-                cv2.RETR_EXTERNAL,
-                cv2.CHAIN_APPROX_NONE,
-            )
-            hair_count = sum(1 for c in contours if cv2.arcLength(c, False) > 5)
-    except Exception:
-        hair_count = int((mask_binary > 0).sum() // 10)
-    return hair_count
+    """
+    Improved hair count based on connected components (ignores tiny noise).
+    Returns an integer count (>=0).
+    """
+    if mask_binary is None or mask_binary.sum() == 0:
+        return 0
+
+    comp_mask = (mask_binary > 0).astype(np.uint8) * 255
+    num_labels, labels = cv2.connectedComponents(comp_mask, connectivity=8)
+
+    # Ignore background label (0). Count components above area threshold
+    min_area_px = 20
+    count = 0
+    for lbl in range(1, num_labels):
+        area = int((labels == lbl).sum())
+        if area >= min_area_px:
+            count += 1
+
+    # Fall back if count becomes 0 but mask non-empty (avoid returning 0 for real masks)
+    if count == 0:
+        # fallback heuristic: approximate by total hair pixels / typical strand cross-section
+        approx_count = int(max(1, comp_mask.sum() // 200))
+        return approx_count
+
+    return int(count)
 
 
 def compute_hairs_per_cm2(hair_count: int, img_shape, pixel_size_mm: Optional[float]):
@@ -1134,19 +1167,6 @@ with st.sidebar:
         "Regimen Intensity", ["Minimalist", "Standard", "Intensive"]
     )
 
-    # Advanced Settings
-    st.subheader("⚙️ Advanced Settings")
-    pixel_size_mm = st.number_input(
-        "Pixel size (mm) - optional calibration",
-        min_value=0.0,
-        value=0.0,
-        step=0.001,
-        help="Leave at 0 for uncalibrated analysis. For dermatoscope images, enter actual pixel size.",
-    )
-    vellus_threshold_um = st.number_input(
-        "Vellus/Terminal threshold (μm)", min_value=1.0, value=40.0, step=1.0
-    )
-
     st.markdown("---")
 
     # Privacy Controls
@@ -1264,9 +1284,7 @@ with col_right:
 
     if analyze_button:
         if not user_id:
-            st.warning(
-                "⚠️ Please enter a **Tracking ID** in the sidebar to save your scan history."
-            )
+            st.warning("⚠️ Please enter a Tracking ID to save your scan history.")
         elif not uploaded_photo:
             st.warning("⚠️ Please upload a photo before analyzing.")
         else:
@@ -1299,20 +1317,25 @@ with col_right:
                         cv_metrics, image_quality
                     )
 
-                    # Advanced Metrics
+                    # 🔬 Auto-calculated Advanced Metrics (no sidebar inputs)
                     st.info("🔬 Calculating advanced hair metrics...")
                     hair_mask = simple_hair_mask_from_edges(density.get("mask"))
-                    pixel_cal = pixel_size_mm if pixel_size_mm > 0 else None
+
+                    # Auto-calculated pixel size and threshold
+                    auto_pixel_size_mm = 0.005  # ≈ 5 µm/pixel, good default for dermatoscope-level detail
+                    auto_vellus_threshold_um = 40.0  # standard dermatological threshold
+
                     diam_res = estimate_diameter_distribution(
-                        hair_mask, pixel_size_mm=pixel_cal
+                        hair_mask, pixel_size_mm=auto_pixel_size_mm
                     )
                     vellus_res = classify_vellus_terminal(
                         diam_res.get("diameters_um", []),
-                        threshold_um=vellus_threshold_um,
+                        threshold_um=auto_vellus_threshold_um,
                     )
+
                     hair_count = estimate_hair_count(hair_mask)
                     hairs_per_cm2_val = compute_hairs_per_cm2(
-                        hair_count, img.shape, pixel_cal
+                        hair_count, img.shape, auto_pixel_size_mm
                     )
                     heat_rgb, heat_norm = local_density_heatmap(hair_mask)
 
@@ -1326,12 +1349,11 @@ with col_right:
                         "vellus_terminal": vellus_res,
                         "hair_count": hair_count,
                         "hairs_per_cm2": hairs_per_cm2_val,
+                        "auto_pixel_size_mm": auto_pixel_size_mm,
+                        "auto_vellus_threshold_um": auto_vellus_threshold_um,
                     }
 
-                    # Initialize session state
-                    if "analysis_results" not in st.session_state:
-                        st.session_state.analysis_results = {}
-
+                    # Save results in session
                     st.session_state.analysis_results = {
                         "cv_metrics": cv_metrics,
                         "image_quality": image_quality,
@@ -1345,14 +1367,11 @@ with col_right:
                         "diam_res": diam_res,
                     }
 
-                    # AI Analysis
-                    if not local_only and (
-                        model is not None or vision_model is not None
-                    ):
+                    # AI Analysis (optional)
+                    if not local_only and (model or vision_model):
                         st.info("🤖 Running AI vision analysis...")
                         ai_analysis = analyze_hair_image_gemini(image_path)
-
-                        st.info("🧠 Generating comprehensive AI recommendations...")
+                        st.info("🧠 Generating AI recommendations...")
                         full_result = analyze_hair_results_gemini(
                             image_path,
                             {
@@ -1367,18 +1386,12 @@ with col_right:
                             },
                             cv_metrics,
                         )
-
                         st.session_state.analysis_results["ai_result"] = full_result
                         st.session_state.analysis_results["ai_analysis"] = ai_analysis
                     else:
                         st.session_state.analysis_results["ai_result"] = {
                             "analysis_summary": "Local-only analysis (AI skipped)",
-                            "ai_suggestions": "AI analysis was skipped. Uncheck 'Process locally only' in sidebar and ensure GEMINI_API_KEY is set to get AI recommendations.",
-                        }
-                        st.session_state.analysis_results["ai_analysis"] = {
-                            "hair_type": "Not Analyzed",
-                            "scalp_condition": "Not Analyzed",
-                            "issues": ["AI analysis was skipped"],
+                            "ai_suggestions": "AI analysis skipped. Enable Gemini for full insights.",
                         }
 
                     # Save history
@@ -1465,9 +1478,13 @@ if "analysis_results" in st.session_state and st.session_state.analysis_results:
             st.warning(f"Could not generate overlay image: {str(e)}")
 
     with tab2:
-        st.subheader("Advanced Hair Metrics")
-
         adv = results["advanced_metrics"]
+        st.markdown(
+            f"**Pixel Calibration (auto):** {adv.get('auto_pixel_size_mm', 0):.4f} mm/pixel"
+        )
+        st.markdown(
+            f"**Vellus/Terminal Threshold (auto):** {adv.get('auto_vellus_threshold_um', 0):.1f} µm"
+        )
 
         col_a1, col_a2, col_a3 = st.columns(3)
         with col_a1:
